@@ -1,0 +1,42 @@
+name: WordPress CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Ansible
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible
+
+      - name: Check Ansible version
+        run: |
+          ansible --version
+
+      - name: Test connection to WordPress server
+        run: |
+          ansible webservers \
+            -i inventory/hosts \
+            -m ping
+
+      - name: Validate Ansible playbook
+        run: |
+          ansible-playbook \
+            -i inventory/hosts \
+            playbooks/wordpress.yml \
+            --syntax-check
+
+      - name: Deploy WordPress
+        run: |
+          ansible-playbook \
+            -i inventory/hosts \
+            playbooks/wordpress.yml
