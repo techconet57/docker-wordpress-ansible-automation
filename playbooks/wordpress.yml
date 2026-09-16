@@ -1,0 +1,52 @@
+---
+- name: Deploy WordPress with Docker
+  hosts: webservers
+  become: yes
+
+  tasks:
+
+    - name: Install required packages
+      ansible.builtin.dnf:
+        name:
+          - dnf-plugins-core
+          - python3-pip
+        state: present
+
+    - name: Add Docker repository
+      ansible.builtin.get_url:
+        url: https://download.docker.com/linux/centos/docker-ce.repo
+        dest: /etc/yum.repos.d/docker-ce.repo
+        mode: '0644'
+
+    - name: Install Docker
+      ansible.builtin.dnf:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+
+    - name: Start Docker
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Create WordPress project directory
+      ansible.builtin.file:
+        path: /opt/wordpress
+        state: directory
+        mode: '0755'
+
+    - name: Copy Docker Compose file
+      ansible.builtin.template:
+        src: /opt/ansible-project-wp/templates/compose.yml.j2
+        dest: /opt/wordpress/compose.yml
+        mode: '0644'
+
+    - name: Start WordPress stack
+      ansible.builtin.command:
+        cmd: docker compose up -d
+        chdir: /opt/wordpress
